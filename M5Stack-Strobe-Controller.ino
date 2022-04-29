@@ -26,7 +26,7 @@ String strInterval = uint64ToString(interval);
 float rpm = freq * 60;
 String strRpm = floatToString(rpm);
 
-int flashtime = 1000; // in micro-second (us). 1ms means 1/100 duty-cycle at 10Hz (100ms)
+int flashtime = 200; // in micro-second (us). 0.2ms means 1/500 duty-cycle at 10Hz (100ms)
 int maxFlashtime = interval;
 int minFlashtime = 5;
 String strFlashtime = String(flashtime);
@@ -66,13 +66,13 @@ String strFlashtime = String(flashtime);
   [Y]
 */
 
-int fX = 0;                 int fY = 10; // base
+int fX = 0;                 int fY = 160; // base
 int freqTitleX = 10 + fX;   int freqTitleY = 0 + fY;
 int freqX = 80 + fX;        int freqY = 0 + fY;
 int freqX2 = 250 + fX;      int freqY2 = 50 + fY;
 int freqUnitX = 270 + fX;   int freqUnitY = 15 + fY;
 
-int iX = 0;                 int iY = 65;
+int iX = 0;                 int iY = 130;
 int intvlTitleX = 0 + iX;   int intvlTitleY = 0 + iY;
 int intvlX = 91 + iX;       int intvlY = 0 + iY;
 int intvlX2 = 175 + iX;     int intvlY2 = 25 + iY;
@@ -81,11 +81,11 @@ int rpmX = 210 + iX;        int rpmY = 0 + iY;
 int rpmX2 = 280 + iX;       int rpmY2 = 25 + iY;
 int rpmUnitX = 282 + iX;    int rpmUnitY = 0 + iY;
 
-int gX = 0;                 int gY = 110; // base
+int gX = 0;                 int gY = 55; // base
 int graphTopY = 0 + gY;     int graphBaseY = 40 + gY;
 int graphRiseX1 = 10;       int graphRiseX2 = 310;
 
-int sX = 10;                int sY = 190; // base
+int sX = 10;                int sY = 10; // base
 int flashTitleX = 0 + sX;   int flashTitleY = 0 + sY;
 int flashX = 150 + sX;      int flashY = -5 + sY;
 int flashX2 = 230 + sX;     int flashY2 = 15 + sY;
@@ -162,8 +162,7 @@ void drawFreq() {
 }
 
 void drawGraphFrame(){
-  M5.Lcd.fillRect(0,graphBaseY, 320, 1,  YELLOW);
-  M5.Lcd.fillRect(0,graphBaseY+1, 320, 3,  OLIVE);
+  M5.Lcd.fillRect(0,graphBaseY, 320, 3,  YELLOW);
 }
 
 void drawGraph(){
@@ -173,6 +172,10 @@ void drawGraph(){
   for(int x=graphRiseX1; x<320; x+=graphIntervalPx){
     M5.Lcd.fillRect(x,graphTopY, graphFlashPx, graphBaseY-graphTopY,  YELLOW);
   }
+  M5.Lcd.fillRect(graphRiseX1,graphTopY-10, 320, 5,  BLACK);
+  M5.Lcd.fillRect(graphRiseX1,graphTopY-10, graphFlashPx, 5,  OLIVE);
+  M5.Lcd.fillRect(graphRiseX1,graphBaseY+8, 320, 5,  BLACK);
+  M5.Lcd.fillRect(graphRiseX1,graphBaseY+8, graphIntervalPx, 5,  PURPLE);
 }
 
 void drawFlashtimeFrame(){
@@ -209,8 +212,8 @@ void drawFooter(){
   int x, y;
   if(mode == MODE_SET_FREQ){
     M5.Lcd.fillRoundRect(100,215, 120,30,  10,   DARKGREY);
-    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225, LIGHTGREY);
-    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, YELLOW);
+    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225,  CYAN);
+    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, LIGHTGREY);
     x = freqX -10;
     y = (freqY2 + freqY) / 2;
     M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, GREEN);
@@ -223,8 +226,8 @@ void drawFooter(){
     M5.Lcd.fillTriangle(x, y, x-10, y-10, x-10, y+10, BLACK);
   }else if(mode == MODE_SET_FLASHTIME){
     M5.Lcd.fillRoundRect(100,215, 120,30,  10,   DARKGREY);
-    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225,  CYAN);
-    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, LIGHTGREY);
+    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225, LIGHTGREY);
+    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, YELLOW);
     x = freqX -10;
     y = (freqY2 + freqY) / 2;
     M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, BLACK);
