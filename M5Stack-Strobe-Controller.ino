@@ -66,25 +66,30 @@ String strFlashtime = String(flashtime);
   [Y]
 */
 
-int freqTitleX = 10;        int freqTitleY = 10;
-int freqX = 80;             int freqY = 10;
-int freqX2 = 250;           int freqY2 = 60;
-int freqUnitX = 270;        int freqUnitY = 25;
-int intvlTitleX = 0;       int intvlTitleY = 65;
-int intvlX = 91;            int intvlY = 65;
-int intvlX2 = 175;          int intvlY2 = 90;
-int intvlUnitX = 185;       int intvlUnitY = 65;
-int rpmX = 210;             int rpmY = 65;
-int rpmX2 = 280;            int rpmY2 = 90;
-int rpmUnitX = 282;         int rpmUnitY = 65;
+int fX = 0;                 int fY = 10; // base
+int freqTitleX = 10 + fX;   int freqTitleY = 0 + fY;
+int freqX = 80 + fX;        int freqY = 0 + fY;
+int freqX2 = 250 + fX;      int freqY2 = 50 + fY;
+int freqUnitX = 270 + fX;   int freqUnitY = 15 + fY;
 
-int graphTopY = 110;         int graphBaseY = 150;
-int graphRiseX1 = 10;        int graphRiseX2 = 310;
+int iX = 0;                 int iY = 65;
+int intvlTitleX = 0 + iX;   int intvlTitleY = 0 + iY;
+int intvlX = 91 + iX;       int intvlY = 0 + iY;
+int intvlX2 = 175 + iX;     int intvlY2 = 25 + iY;
+int intvlUnitX = 185 + iX;  int intvlUnitY = 0 + iY;
+int rpmX = 210 + iX;        int rpmY = 0 + iY;
+int rpmX2 = 280 + iX;       int rpmY2 = 25 + iY;
+int rpmUnitX = 282 + iX;    int rpmUnitY = 0 + iY;
 
-int flashTitleX = 10;       int flashTitleY = 190;
-int flashX = 160;           int flashY = 185;
-int flashX2 = 240;          int flashY2 = 205;
-int flashUnitX = 270;       int flashUnitY = 190;
+int gX = 0;                 int gY = 110; // base
+int graphTopY = 0 + gY;     int graphBaseY = 40 + gY;
+int graphRiseX1 = 10;       int graphRiseX2 = 310;
+
+int sX = 10;                int sY = 190; // base
+int flashTitleX = 0 + sX;   int flashTitleY = 0 + sY;
+int flashX = 150 + sX;      int flashY = -5 + sY;
+int flashX2 = 230 + sX;     int flashY2 = 15 + sY;
+int flashUnitX = 260 + sX;  int flashUnitY = sY;
 
 int w = 0;
 
