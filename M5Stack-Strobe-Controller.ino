@@ -1,44 +1,92 @@
 /*
-*******************************************************************************
+*****************************************************************************
 * Built for M5Stack Core
-*******************************************************************************
+*****************************************************************************
 */
+// @formatter:off
 #include <M5Stack.h>
+#include "utility.h"
+#include <math.h>
 
 int ledPin = 5;
-int flash_in_us = 500;
 
 const char MODE_SET_INTERVAL = 0;
 const char MODE_SET_FLASHTIME = 1;
-char mode = MODE_SET_INTERVAL;  
+const char MODE_SET_FREQ = 2;
+char mode = MODE_SET_FREQ;
 
-uint64_t  interval = 100000; // in micro-second (us)
-uint64_t  interval_disp = 100000;
-uint64_t  interval_min = 1000;
-String strInterval;
-int interval_digits = 6; // max to 999999 us --> 1 Hz
-int interval_cursor_pos = interval_digits - 1;
+float freq = 10.0;
+float maxFreq = 1000.0;
+float minFreq = 1.0;
+String strFreq = floatToString(freq);
 
-float freq_in_hz;
-int hz_x = 10;
-int hz_y = 10;
-int hz_unit_x = 230;
-int hz_unit_y = 10;
-float rpm;
-int rpm_x = 10;
-int rpm_y = 80;
-int rpm_unit_x = 230;
-int rpm_unit_y = 80;
-int interval_x = 0;
-int interval_y = 150;
-int interval_number_x;
-int cursor_y = 190;
+uint64_t interval = freqToInterval(freq);
+String strInterval = uint64ToString(interval);
 
-int flashtime = 100; // in micro-second (us). 100us means 1/10 duty-cycle at 1000Hz
-int flashtime_max = interval;
-int flashtime_min = 5;
-String strFlashtime;
-int flashtime_digits = 4; // max to 9999 us --> 10 ms (100Hz max)
+float rpm = freq * 60;
+String strRpm = floatToString(rpm);
+
+int flashtime = 1000; // in micro-second (us). 1ms means 1/100 duty-cycle at 10Hz (100ms)
+int maxFlashtime = interval;
+int minFlashtime = 5;
+String strFlashtime = String(flashtime);
+
+/*
+
+                        1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
+   ┌────────────────────────────────────────────────────────────────┐-> [X]
+  0│                                                                │
+  1│      ┌                                      ┐                  │ (freqX, freqY) 
+  2│         11    0000   0000   0000      0000                     │  (freqX2, freqY2) 
+  3│     ◄    1    0  0   0  0   0  0      0  0   ►   ┌             │     (freqUnitX, freqUnitY)
+  4│         111   0000   0000   0000  **  0000          H z        │  
+  5│                                             ┘             ┘    │ 
+  6│  ┌            ┌                      │  ┌                      │ (intvlTitleX, intvlTitleY)
+  7│    Interval     1  0  0  0  ┌        │    1  0  0  0  ┌        │ (intvlX, intvlY)
+  8│             ┘              ┘  u s ┘  │               ┘  rpm ┘  │ (intvlUnitX, intvlUnitY)
+  9│                                                                │ (rpmX, rpmY) (rpmUnitX, rpmUnitY)
+ 10│ |<==========================================================>| │
+ 11│ ┌─────────────┐                                              ┌─┤ (graphTopY)
+ 12│ │             │                                              │ │ (graphRiseX1) (graphRiseX2)
+ 13│ │             │                                              │ │
+ 14│ │             │                                              │ │
+ 15├─┘             └──────────────────────────────────────────────┘ │ (graphBaseY)
+ 16│ |<----------->|                                              : │
+ 17│                                                                │ (flashTitleX, flashTitleY)
+ 18│ ┌                          ┌                                   │ (flashX, flashY)
+ 19│   Flash speed            ◄     1 /  1  0  0     ►   ┌          │  (flashX2, flashY2)
+ 20│                     ┘                         ┘       u s ┘    │ (flashUnitX, flashUnitY)
+ 21│                       ┌──────────────────┐                     │ 
+ 22│  ┌───────────────┐    │         ▲        │   ┌───────────────┐ │
+ 23│  │    ◄  +       │    │         ▼        │   │       -   ►   │ │
+ 24└──┴───────────────┴────┴──────────────────┴───┴───────────────┴─┘
+   |  (10,220)             (100,215)             (230,220)
+   V            (90,240)               (220,240)           (310,240)
+  [Y]
+*/
+
+int freqTitleX = 10;        int freqTitleY = 10;
+int freqX = 80;             int freqY = 10;
+int freqX2 = 250;           int freqY2 = 60;
+int freqUnitX = 270;        int freqUnitY = 25;
+int intvlTitleX = 0;       int intvlTitleY = 65;
+int intvlX = 91;            int intvlY = 65;
+int intvlX2 = 175;          int intvlY2 = 90;
+int intvlUnitX = 185;       int intvlUnitY = 65;
+int rpmX = 210;             int rpmY = 65;
+int rpmX2 = 280;            int rpmY2 = 90;
+int rpmUnitX = 282;         int rpmUnitY = 65;
+
+int graphTopY = 110;         int graphBaseY = 150;
+int graphRiseX1 = 10;        int graphRiseX2 = 310;
+
+int flashTitleX = 10;       int flashTitleY = 190;
+int flashX = 160;           int flashY = 185;
+int flashX2 = 240;          int flashY2 = 205;
+int flashUnitX = 270;       int flashUnitY = 190;
+
+int w = 0;
 
 volatile int interruptintervaler;
 int totalInterruptintervaler;
@@ -61,159 +109,90 @@ void updateTimer(){
   timerAlarmEnable(timer);
 }
 
-String uint64ToString(uint64_t input) {
-  String result = "";
-  uint8_t base = 10;
-
-  do {
-    char c = input % base;
-    input /= base;
-
-    if (c < 10)
-      c +='0';
-    else
-      c += 'A' - 10;
-    result = c + result;
-  } while (input);
-  return result;
-}
-
-void switch_mode(){
-  Serial.println("### swtich_mode()");
-  if(mode == MODE_SET_INTERVAL){
-    Serial.println("---> MODE_SET_FLASHTIME");
-    mode = MODE_SET_FLASHTIME;
-    drawFlashtimeFrame();
-    Serial.println("out from drawFlashtimeFrame()");
-    drawFlashtime();
-    Serial.println("out from drawFlashtime()");
-  }else if(mode == MODE_SET_FLASHTIME){
-    Serial.println("---> MODE_SET_INTERVAL");
-    mode = MODE_SET_INTERVAL;
-    drawIntervalFrame();
-    drawInterval();
-  }
-  drawFooter();
-}
-
-void drawCursor(){
-  for (int i=0; i < interval_digits; i++){
-    if(i == interval_cursor_pos){
-      M5.Lcd.fillRect(interval_number_x + i*24, cursor_y, 20, 10, CYAN);
-    }else{
-      M5.Lcd.fillRect(interval_number_x + i*24, cursor_y, 20, 10, BLUE);
-    }
-  }
-}
-
-void drawFreq(){
-  freq_in_hz = 1000000.00 / interval;
-  rpm = freq_in_hz * 60;
-  String strFreq = String(freq_in_hz,2);
-  String strRpm = String(rpm,1);
-  M5.Lcd.setTextSize(5);
-  int x = hz_unit_x - 10 - M5.Lcd.textWidth(strFreq);
-  M5.Lcd.fillRect(0, hz_y, hz_unit_x, rpm_unit_y - hz_unit_y, BLACK); // TODO: Optimize to only fill the changed digit
-  M5.Lcd.setCursor(x, hz_y);
-  M5.Lcd.setTextColor(LIGHTGREY);
-  M5.Lcd.println(strFreq);
-  x = rpm_unit_x - 10 - M5.Lcd.textWidth(strRpm);
-  M5.Lcd.fillRect(0, rpm_y, rpm_unit_x, interval_y - rpm_unit_y, BLACK); // TODO: Optimize to only fill the changed digit
-  M5.Lcd.setCursor(x, rpm_y);
-  M5.Lcd.setTextColor(LIGHTGREY);
-  M5.Lcd.println(strRpm);
-  
-  Serial.print("Freq: ");
-  Serial.print(strFreq);
-  Serial.print("  RPM: ");
-  Serial.println(strRpm);
-}
-
-void drawIntervalFrame(){
-  M5.Lcd.fillRect(0, interval_y, 320, 70, BLACK); 
-  M5.Lcd.setTextColor(YELLOW);
+void drawFreqFrame() {
+  M5.Lcd.setTextColor(CYAN);
   M5.Lcd.setTextSize(2);
-  M5.Lcd.setCursor(interval_x, interval_y);
-  M5.Lcd.print("Interval ");
-  interval_number_x = M5.Lcd.getCursorX();
-  M5.Lcd.setCursor(interval_x + 50, interval_y + 18);
-  M5.Lcd.print("(us)");
-
-  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setCursor(freqTitleX, freqTitleY);
+  M5.Lcd.println("Freq");
+  
+  M5.Lcd.setTextColor(CYAN);
   M5.Lcd.setTextSize(4);
-  M5.Lcd.setCursor(interval_number_x, interval_y);
-  String strInterval = uint64ToString(interval);
-  int w = M5.Lcd.textWidth(strInterval);
-  M5.Lcd.print(strInterval);
-  M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(M5.Lcd.getCursorX()+28, M5.Lcd.getCursorY()+10);
-  M5.Lcd.print("us");
-  interval_disp = interval;
+  M5.Lcd.setCursor(freqUnitX, freqUnitY);
+  M5.Lcd.println("Hz");
 
-  int x = interval_number_x + w + 2;
-  int y = interval_y + 4;
-  M5.Lcd.fillTriangle(x+8, y+0,    x, y+8,     x+16, y+8,  RED);
-  M5.Lcd.fillTriangle(x+8, y+24,   x, y+16,    x+16, y+16, GREEN);
+  //M5.Lcd.fillRect(0, intvlTitleY-5, rpmX-intvlTitleX, intvlY2-intvlY,  PURPLE);
+  M5.Lcd.setTextColor(PINK);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setCursor(intvlTitleX, intvlTitleY);
+  M5.Lcd.println("Interval");
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setCursor(intvlUnitX, intvlUnitY);
+  M5.Lcd.println("us");
+  
+  M5.Lcd.setTextColor(CYAN);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setCursor(rpmUnitX, rpmUnitY);
+  M5.Lcd.println("rpm");
 }
 
-void drawInterval(){
-  M5.Lcd.fillRect(interval_number_x, interval_y, 24*interval_digits, 40, BLACK); // TODO: Optimize to only fill the changed digit
-  M5.Lcd.setCursor(interval_number_x, interval_y);
+void drawFreq() {
+  M5.Lcd.fillRect(freqX, freqY, freqX2-freqX, freqY2-freqY,  BLACK);
   M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setTextSize(4);
-  strInterval = uint64ToString(interval);
-  while(strInterval.length() < interval_digits){
-    strInterval = "0" + strInterval;
-  }
+  M5.Lcd.setTextSize(6);
+  w = M5.Lcd.textWidth(strFreq);
+  M5.Lcd.setCursor(freqX2 - w, freqY);
+  M5.Lcd.println(strFreq);
+
+  M5.Lcd.fillRect(intvlX+5, intvlY-5, intvlX2-intvlX, intvlY2-intvlY,  PURPLE);
+  M5.Lcd.setTextSize(2);
+  w = M5.Lcd.textWidth(strInterval);
+  M5.Lcd.setCursor(intvlX2-w, intvlY);
   M5.Lcd.println(strInterval);
-  interval_disp = interval;
+
+  M5.Lcd.fillRect(rpmX, rpmY, rpmX2-rpmX, rpmY2-rpmY,  BLACK);
+  M5.Lcd.setTextSize(2);
+  w = M5.Lcd.textWidth(strRpm);
+  M5.Lcd.setCursor(rpmX2-w, rpmY);
+  M5.Lcd.println(strRpm);
+}
+
+void drawGraphFrame(){
+  M5.Lcd.fillRect(0,graphBaseY, 320, 1,  YELLOW);
+  M5.Lcd.fillRect(0,graphBaseY+1, 320, 3,  OLIVE);
+}
+
+void drawGraph(){
+  M5.Lcd.fillRect(0,graphTopY, 320, graphBaseY-graphTopY,  BLACK);
+  int graphIntervalPx = usToLogPx(interval);
+  int graphFlashPx = usToLogPx(flashtime);
+  for(int x=graphRiseX1; x<320; x+=graphIntervalPx){
+    M5.Lcd.fillRect(x,graphTopY, graphFlashPx, graphBaseY-graphTopY,  YELLOW);
+  }
 }
 
 void drawFlashtimeFrame(){
-  M5.Lcd.fillRect(0, interval_y, 320, 70, BLACK); 
-  M5.Lcd.setTextColor(PINK);
+  M5.Lcd.setTextColor(YELLOW);
   M5.Lcd.setTextSize(2);
-  M5.Lcd.setCursor(interval_x, interval_y);
-  M5.Lcd.println(" Flash ");
-  M5.Lcd.setCursor(interval_x, interval_y + 18);
-  M5.Lcd.println("duration");
+  M5.Lcd.setCursor(flashTitleX, flashTitleY);
+  M5.Lcd.println("Flashspeed");
 
-  M5.Lcd.fillRect(interval_number_x, cursor_y, 20 + 24*flashtime_digits, 10, BLACK);
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setTextSize(4);
-  M5.Lcd.setCursor(interval_number_x, interval_y);
-  String strFlashtime = uint64ToString(flashtime);
-  while(strFlashtime.length() < flashtime_digits){
-    strFlashtime = " " + strFlashtime;
-  }
-  int w = M5.Lcd.textWidth(strFlashtime);
-  M5.Lcd.print(strFlashtime);
-  M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(M5.Lcd.getCursorX()+28, M5.Lcd.getCursorY()+10);
-  M5.Lcd.print("us");
-
-  int x = interval_number_x + 24*flashtime_digits + 2;
-  int y = interval_y + 4;
-  M5.Lcd.fillTriangle(x+8, y+0,    x, y+8,     x+16, y+8,  RED);
-  M5.Lcd.fillTriangle(x+8, y+24,   x, y+16,    x+16, y+16, GREEN);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setCursor(flashUnitX, flashUnitY);
+  M5.Lcd.println("us");
 }
 
 void drawFlashtime(){
-  M5.Lcd.fillRect(interval_number_x, interval_y, 24*flashtime_digits, 40, BLACK); // TODO: Optimize to only fill the changed digit
-  M5.Lcd.setCursor(interval_number_x, interval_y);
+  M5.Lcd.fillRect(flashX, flashY-5, flashX2-flashX, flashY2-flashY+10,  OLIVE);
   M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setTextSize(4);
-  strFlashtime = uint64ToString(flashtime);
-  Serial.print(strFlashtime);
-  while(strFlashtime.length() < flashtime_digits){
-    strFlashtime = " " + strFlashtime;
-  }
+  M5.Lcd.setTextSize(3);
+  w = M5.Lcd.textWidth(strFlashtime);
+  M5.Lcd.setCursor(flashX2-w, flashY);
   M5.Lcd.println(strFlashtime);
 }
 
 void drawFooter(){
-  M5.Lcd.fillRoundRect( 10,220,  80,20,   5,   RED);
-  M5.Lcd.fillRoundRect(230,220,  80,20,   5,   GREEN);
+  M5.Lcd.fillRoundRect( 10,220,  80,20,   5,   GREEN);
+  M5.Lcd.fillRoundRect(230,220,  80,20,   5,   RED);
   M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(BLACK);
   M5.Lcd.setCursor(45,224);
@@ -222,18 +201,69 @@ void drawFooter(){
   M5.Lcd.setCursor(265,224);
   M5.Lcd.println("-");
 
-  if(mode == MODE_SET_INTERVAL){
-    M5.Lcd.fillRoundRect(100,215, 120,30,  10,   PINK);
-    M5.Lcd.fillRoundRect(105,220, 110,20,   5,   CYAN);
-    M5.Lcd.setTextColor(BLACK);
-    M5.Lcd.setCursor(113,223);
-    M5.Lcd.println("Cursor>>");
+  int x, y;
+  if(mode == MODE_SET_FREQ){
+    M5.Lcd.fillRoundRect(100,215, 120,30,  10,   DARKGREY);
+    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225, LIGHTGREY);
+    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, YELLOW);
+    x = freqX -10;
+    y = (freqY2 + freqY) / 2;
+    M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, GREEN);
+    x = freqX2 + 10;
+    M5.Lcd.fillTriangle(x, y, x-10, y-10, x-10, y+10, RED);
+    x = flashX -15;
+    y = (flashY2 + flashY) / 2;
+    M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, BLACK);
+    x = flashX2 + 15;
+    M5.Lcd.fillTriangle(x, y, x-10, y-10, x-10, y+10, BLACK);
   }else if(mode == MODE_SET_FLASHTIME){
-    M5.Lcd.fillRoundRect(100,215, 120,30,  10,   YELLOW);
-    M5.Lcd.setTextColor(BLACK);
-    M5.Lcd.setCursor(113,223);
-    M5.Lcd.println("<-Intval");
+    M5.Lcd.fillRoundRect(100,215, 120,30,  10,   DARKGREY);
+    M5.Lcd.fillTriangle(160, 220, 155, 225, 165, 225,  CYAN);
+    M5.Lcd.fillTriangle(160, 235, 155, 230, 165, 230, LIGHTGREY);
+    x = freqX -10;
+    y = (freqY2 + freqY) / 2;
+    M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, BLACK);
+    x = freqX2 + 10;
+    M5.Lcd.fillTriangle(x, y, x-10, y-10, x-10, y+10, BLACK);
+    x = flashX -15;
+    y = (flashY2 + flashY) / 2;
+    M5.Lcd.fillTriangle(x, y, x+10, y-10, x+10, y+10, GREEN);
+    x = flashX2 + 15;
+    M5.Lcd.fillTriangle(x, y, x-10, y-10, x-10, y+10, RED);
   }
+}
+
+void switch_mode(){
+  Serial.println("### swtich_mode()");
+  if(mode == MODE_SET_FREQ){
+    mode = MODE_SET_FLASHTIME;
+    drawFlashtimeFrame();
+    drawFlashtime();
+  }else if(mode == MODE_SET_FLASHTIME){
+    mode = MODE_SET_FREQ;
+    Serial.println("---> MODE_SET_FREQ");
+    drawFreqFrame();
+    drawFreq();
+  }
+  drawFooter();
+}
+
+void updateFreqValues(){
+  strFreq = floatToString(freq);
+
+  interval = freqToInterval(freq);
+  strInterval = uint64ToString(interval);
+  Serial.print(interval);
+  Serial.print(", ");
+  Serial.println(strInterval);
+
+  rpm = freq * 60;
+  strRpm = uint64ToString(floatToUint64(rpm));
+}
+
+void updateFlashValues(){
+  strFlashtime = String(flashtime);
+  Serial.println(strFlashtime);
 }
 
 /* After M5Core is started or reset
@@ -244,18 +274,13 @@ void setup() {
   
   M5.begin();  //Init M5Core.
   M5.Power.begin(); //Init Power module. 
-  M5.Lcd.setTextColor(ORANGE);
-  M5.Lcd.setTextSize(5);
-  M5.Lcd.setCursor(hz_unit_x, hz_unit_y);
-  M5.Lcd.println("Hz");
-  M5.Lcd.setTextColor(ORANGE);
-  M5.Lcd.setCursor(rpm_unit_x, rpm_unit_y);
-  M5.Lcd.println("rpm");
 
+  drawFreqFrame();
   drawFreq();
-  drawIntervalFrame();
-  drawInterval();
-  drawCursor();
+  drawGraphFrame();
+  drawGraph();
+  drawFlashtimeFrame();
+  drawFlashtime();
 
   drawFooter();
   
@@ -281,64 +306,68 @@ void loop() {
     delayMicroseconds(flashtime);
     digitalWrite(ledPin, LOW);
  
-    Serial.print("Interrupt: ");
-    Serial.println(totalInterruptintervaler);
+    // Serial.print("Interrupt: ");
+    // Serial.println(totalInterruptintervaler);
  
   }
   
   M5.update(); //Read the press state of the key.  
   
   switch(mode){
-  case MODE_SET_INTERVAL:
-    if (M5.BtnB.pressedFor(1000,2000)){
-      Serial.println(" --> SET_FLASHTIME mode");
-      switch_mode();
-    }else if (M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 10)) {
-      interval += pow(10,interval_digits-1 - interval_cursor_pos);
-      if(interval >= pow(10,interval_digits)){
-        interval = pow(10,interval_digits)-1;
-      }
-      updateTimer();
-      drawInterval();
-      drawFreq();
-    } else if (M5.BtnB.wasReleased()) {
-      interval_cursor_pos++;
-      if(interval_cursor_pos == interval_digits){
-        interval_cursor_pos = 0;
-      }
-      drawCursor();
-    } else if (M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 10)) {
-        if(interval <= pow(10,interval_digits-1-interval_cursor_pos)){
-          interval = interval_min;
-        }else{
-          interval -= pow(10,interval_digits-1-interval_cursor_pos);
-        }
-        if(interval < interval_min){
-          interval = interval_min;
-        }
-        updateTimer();
-        drawInterval();
-        drawFreq();
-    } 
-    break;    
     
   case MODE_SET_FLASHTIME:
-    if (M5.BtnB.pressedFor(1000,2000)){
+    if (M5.BtnB.wasReleased()){
       switch_mode();
     }else if (M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 10)) {
       flashtime++;
       if(flashtime >= interval){
         flashtime = interval;
       }
-      drawFlashtime();
+      updateFlashValues();
       updateTimer();
+      drawFlashtime();
+      drawGraph();
     } else if (M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 10)) {
       flashtime--;
-      if(flashtime <= flashtime_min){
-        flashtime = flashtime_min;
+      if(flashtime <= minFlashtime){
+        flashtime = minFlashtime;
       }
-      drawFlashtime();
+      updateFlashValues();
       updateTimer();
+      drawFlashtime();
+      drawGraph();
+    }
+    break;
+
+  case MODE_SET_FREQ:
+    if (M5.BtnB.wasReleased()){
+      switch_mode();
+    }else if (M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 10)) {
+      if (freq > 100) {
+        freq += 1;
+      }else{
+        freq += 0.1;
+      }
+      if(freq >= maxFreq){
+        freq = maxFreq;
+      }
+      updateFreqValues();
+      updateTimer();
+      drawFreq();
+      drawGraph();
+    } else if (M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 10)) {
+      if (freq > 100){
+        freq -= 1;
+      }else{
+        freq -= 0.1;
+      }
+      if(freq <= minFreq){
+        freq = minFreq;
+      }
+      updateFreqValues();
+      updateTimer();
+      drawFreq();
+      drawGraph();
     }
     break;
   }
