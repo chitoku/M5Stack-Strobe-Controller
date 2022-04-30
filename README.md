@@ -19,7 +19,8 @@ Run Arduino IDE on your computer, set it up for M5Stack development ([link](http
 
 Then, "Download ZIP" this repository, un-zip the downloaded file and run `M5Stack-Strobe-Controller.ino`.
 
-![](./images/github_download_zip.png)
+<img src="./images/github_download_zip.png" width="300">
+
 
 Select the right `Port` and `Upload` the sketch to your M5Stack.
 
