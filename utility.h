@@ -39,5 +39,6 @@ String floatToString(float f){
 int usToLogPx(float f){
   int i = 3;
   i = (int)(( log10(f) - 2 ) * 75);
+  if (i <= 0) { i=1; }
   return i;
 }

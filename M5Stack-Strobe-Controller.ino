@@ -68,7 +68,7 @@ String strFlashtime = String(flashtime);
 
 int fX = 0;                 int fY = 160; // base
 int freqTitleX = 10 + fX;   int freqTitleY = 0 + fY;
-int freqX = 80 + fX;        int freqY = 0 + fY;
+int freqX = 70 + fX;        int freqY = 0 + fY;
 int freqX2 = 250 + fX;      int freqY2 = 50 + fY;
 int freqUnitX = 270 + fX;   int freqUnitY = 15 + fY;
 
@@ -169,6 +169,10 @@ void drawGraph(){
   M5.Lcd.fillRect(0,graphTopY, 320, graphBaseY-graphTopY,  BLACK);
   int graphIntervalPx = usToLogPx(interval);
   int graphFlashPx = usToLogPx(flashtime);
+  Serial.print(graphFlashPx);
+  if (graphFlashPx == graphIntervalPx) { graphFlashPx--; }
+  Serial.print(" --> ");
+  Serial.println(graphFlashPx);
   for(int x=graphRiseX1; x<320; x+=graphIntervalPx){
     M5.Lcd.fillRect(x,graphTopY, graphFlashPx, graphBaseY-graphTopY,  YELLOW);
   }
