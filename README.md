@@ -11,9 +11,17 @@ M5Stack to control LED strips to create strobe light effect.
 
 ### Hardware Setup
 
+![](./images/strobe-light_bb.png)
 
 ### Software Setup
 
+Run Arduino IDE on your computer, set it up for M5Stack development ([link](https://docs.m5stack.com/en/quick_start/m5core/arduino)). <br>It's good idea to make sure that you can upload and run a sample sketch like `FlappyBird` (File > Examples > M5Stack > Games > FlappyBird).
+
+Then, "Download ZIP" this repository, un-zip the downloaded file and run `M5Stack-Strobe-Controller.ino`.
+
+![](./images/github_download_zip.png)
+
+Select the right `Port` and `Upload` the sketch to your M5Stack.
 
 ### How to operate the UI
 
